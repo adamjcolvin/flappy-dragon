@@ -1,6 +1,14 @@
 use bevy::{app::AppExit, prelude::*};
 use my_library::*;
 
+#[derive(Clone, PartialEq, Eq, Debug, Hash, Default, States)]
+enum GamePhase {
+    MainMenu,
+    #[default]
+    Flapping,
+    GameOver,
+}
+
 #[derive(Component)]
 struct Flappy {
     //(1)
@@ -29,6 +37,11 @@ fn main() {
             ..default()
         }))
         .add_plugins(Random) //(6)
+        .add_plugins(GameStatePlugin::<GamePhase>::new(
+            GamePhase::MainMenu,
+            GamePhase::Flapping,
+            GamePhase::GameOver,
+        ))
         .add_systems(Startup, setup)
         .add_systems(Update, gravity)
         .add_systems(Update, flap)
