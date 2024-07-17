@@ -37,3 +37,6 @@ pub use random_locking::*;
 pub mod rand {
     pub use rand::*;
 }
+
+mod bevy_framework;
+pub use bevy_framework::*;
