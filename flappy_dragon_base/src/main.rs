@@ -1,4 +1,4 @@
-use bevy::{app::AppExit, prelude::*};
+use bevy::prelude::*;
 use my_library::*;
 
 #[derive(Clone, PartialEq, Eq, Debug, Hash, Default, States)]
@@ -14,6 +14,9 @@ struct Flappy {
     //(1)
     gravity: f32, //(2)
 }
+
+#[derive(Component)]
+struct FlappyElement;
 
 #[derive(Component)]
 struct Obstacle; //(3)
@@ -42,12 +45,12 @@ fn main() {
             GamePhase::Flapping,
             GamePhase::GameOver,
         ))
-        .add_systems(Startup, setup)
-        .add_systems(Update, gravity)
-        .add_systems(Update, flap)
-        .add_systems(Update, clamp)
-        .add_systems(Update, move_walls)
-        .add_systems(Update, hit_wall)
+        .add_systems(OnEnter(GamePhase::Flapping), setup)
+        .add_systems(
+            Update,
+            (gravity, flap, clamp, move_walls, hit_wall).run_if(in_state(GamePhase::Flapping)),
+        )
+        .add_systems(OnExit(GamePhase::Flapping), cleanup::<FlappyElement>)
         .run();
 }
 
@@ -62,7 +65,9 @@ fn setup(
         wall: asset_server.load("wall.png"),
     };
 
-    commands.spawn(Camera2dBundle::default()); //(9)
+    commands
+        .spawn(Camera2dBundle::default())
+        .insert(FlappyElement);
     commands
         .spawn(SpriteBundle {
             //(10)
@@ -70,7 +75,8 @@ fn setup(
             transform: Transform::from_xyz(-490.0, 0.0, 1.0), //(11)
             ..default()
         })
-        .insert(Flappy { gravity: 0.0 });
+        .insert(Flappy { gravity: 0.0 })
+        .insert(FlappyElement);
 
     build_wall(&mut commands, assets.wall.clone(), rng.range(-5..5)); //(12)
     commands.insert_resource(assets); //(13)
@@ -87,7 +93,8 @@ fn build_wall(commands: &mut Commands, wall_sprite: Handle<Image>, gap_y: i32) {
                     transform: Transform::from_xyz(512.0, y as f32 * 32.0, 1.0), //(16)
                     ..default()
                 })
-                .insert(Obstacle); //(17)
+                .insert(Obstacle)
+                .insert(FlappyElement);
         }
     }
 }
@@ -108,15 +115,12 @@ fn flap(keyboard: Res<Input<KeyCode>>, mut query: Query<&mut Flappy>) {
     }
 }
 
-fn clamp(
-    mut query: Query<&mut Transform, With<Flappy>>,
-    mut exit: EventWriter<AppExit>, //(22)
-) {
+fn clamp(mut query: Query<&mut Transform, With<Flappy>>, mut state: ResMut<NextState<GamePhase>>) {
     if let Ok(mut transform) = query.get_single_mut() {
         if transform.translation.y > 384.0 {
             transform.translation.y = 384.0; //(23)
         } else if transform.translation.y < -384.0 {
-            exit.send(AppExit); //(24)
+            state.set(GamePhase::GameOver);
         }
     }
 }
@@ -146,7 +150,7 @@ fn move_walls(
 fn hit_wall(
     player: Query<&Transform, With<Flappy>>,  //(26)
     walls: Query<&Transform, With<Obstacle>>, //(27)
-    mut exit: EventWriter<AppExit>,
+    mut state: ResMut<NextState<GamePhase>>,
 ) {
     if let Ok(player) = player.get_single() {
         //(28)
@@ -154,7 +158,7 @@ fn hit_wall(
             //(29)
             let distance = player.translation.distance(wall.translation); //(30)
             if distance < 32.0 {
-                exit.send(AppExit); //(31)
+                state.set(GamePhase::GameOver);
             }
         }
     }

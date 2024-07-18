@@ -22,3 +22,10 @@ impl<T: States> Plugin for GameStatePlugin<T> {
         app.add_state::<T>();
     }
 }
+
+pub fn cleanup<T>(query: Query<Entity, With<T>>, mut commands: Commands)
+where
+    T: Component,
+{
+    query.for_each(|entity| commands.entity(entity).despawn())
+}
