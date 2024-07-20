@@ -40,3 +40,25 @@ pub mod rand {
 
 mod bevy_framework;
 pub use bevy_framework::*;
+
+#[macro_export]
+macro_rules! add_phase {
+  (
+    $app:expr, $type:ty, $phase:expr, //Define variables
+    start => [ $($start:expr),* ], //Describe the syntax we want in a template
+    run => [ $($run:expr),* ],
+    exit => [$($exit:expr),*]
+  ) => { //This is the code that will be used in place of the macro
+    $($app.add_systems(
+      bevy::prelude::OnEnter::<$type>($phase),
+      $start
+    );)*
+    $($app.add_systems(
+      bevy::prelude::Update, $run.run_if(in_state($phase))
+    );)*
+    $($app.add_systems(
+      bevy::prelude::OnExit::<$type>($phase),
+      $exit
+    );)*
+  }
+}

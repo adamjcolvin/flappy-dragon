@@ -27,29 +27,30 @@ enum GamePhase {
 }
 
 fn main() {
-    App::new()
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                //(1)
-                title: "Flappy Dragon - Bevy Edition".to_string(),
-                resolution: bevy::window::WindowResolution::new(1024.0, 768.0),
-                ..default()
-            }),
+    let mut app = App::new();
+
+    add_phase!(app, GamePhase, GamePhase::Flapping,
+      start => [ setup ],
+      run => [ gravity, flap, clamp, move_walls, hit_wall ],
+      exit => [ cleanup::<FlappyElement> ]
+    );
+
+    app.add_plugins(DefaultPlugins.set(WindowPlugin {
+        primary_window: Some(Window {
+            //(1)
+            title: "Flappy Dragon - Bevy Edition".to_string(),
+            resolution: bevy::window::WindowResolution::new(1024.0, 768.0),
             ..default()
-        }))
-        .add_plugins(Random)
-        .add_plugins(GameStatePlugin::new(
-            GamePhase::MainMenu,
-            GamePhase::Flapping,
-            GamePhase::GameOver,
-        ))
-        .add_systems(OnEnter(GamePhase::Flapping), setup)
-        .add_systems(
-            Update,
-            (gravity, flap, clamp, move_walls, hit_wall).run_if(in_state(GamePhase::Flapping)),
-        )
-        .add_systems(OnExit(GamePhase::Flapping), cleanup::<FlappyElement>)
-        .run();
+        }),
+        ..default()
+    }))
+    .add_plugins(Random)
+    .add_plugins(GameStatePlugin::new(
+        GamePhase::MainMenu,
+        GamePhase::Flapping,
+        GamePhase::GameOver,
+    ))
+    .run();
 }
 
 fn setup(
