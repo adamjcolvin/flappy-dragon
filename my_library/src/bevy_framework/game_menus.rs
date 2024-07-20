@@ -49,7 +49,7 @@ pub(crate) fn run<T>(
         }
     } else if current_state == menu_state.game_end_state {
         if keyboard.just_pressed(KeyCode::M) {
-            state.set(menu_state.game_end_state.clone());
+            state.set(menu_state.menu_state.clone());
         } else if keyboard.just_pressed(KeyCode::Q) {
             exit.send(AppExit);
         }
