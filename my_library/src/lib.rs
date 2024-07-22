@@ -69,3 +69,7 @@ pub use bevy_assets::*;
 pub mod anyhow {
     pub use anyhow::*;
 }
+
+pub mod egui {
+    pub use bevy_egui::*;
+}

@@ -16,7 +16,18 @@ pub struct AssetManager {
 impl AssetManager {
     pub fn new() -> Self {
         Self {
-            asset_list: Vec::new(),
+            asset_list: vec![
+                (
+                    "main_menu".to_string(),
+                    "main_menu.png".to_string(),
+                    AssetType::Image,
+                ),
+                (
+                    "game_over".to_string(),
+                    "game_over.png".to_string(),
+                    AssetType::Image,
+                ),
+            ],
         }
     }
 

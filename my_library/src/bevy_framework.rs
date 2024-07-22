@@ -27,7 +27,7 @@ where
 {
     fn build(&self, app: &mut App) {
         app.add_state::<T>(); //(2)
-        app.add_systems(Startup, setup_menus); //(3)
+        app.add_plugins(bevy_egui::EguiPlugin);
         let start = MenuResource {
             menu_state: self.menu_state,
             game_start_state: self.game_start_state, //(4)
@@ -51,22 +51,14 @@ where
             OnExit(self.game_end_state),
             cleanup::<game_menus::MenuElement>,
         );
+
+        app.add_systems(OnEnter(T::default()), crate::bevy_assets::setup);
+        app.add_systems(
+            Update,
+            crate::bevy_assets::run::<T>.run_if(in_state(T::default())),
+        );
+        app.add_systems(OnExit(T::default()), crate::bevy_assets::exit);
     }
-}
-
-#[derive(Resource)]
-pub(crate) struct MenuAssets {
-    //(6)
-    pub(crate) main_menu: Handle<Image>,
-    pub(crate) game_over: Handle<Image>,
-}
-
-fn setup_menus(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let assets = MenuAssets {
-        main_menu: asset_server.load("main_menu.png"),
-        game_over: asset_server.load("game_over.png"),
-    };
-    commands.insert_resource(assets);
 }
 
 #[derive(Resource)]

@@ -4,6 +4,9 @@ pub use asset_manager::AssetManager;
 mod asset_store;
 pub use asset_store::*;
 
+mod loading_menu;
+pub(crate) use loading_menu::*;
+
 #[macro_export]
 macro_rules! spawn_image {
     ($assets:expr, $commands:expr, $index:expr, $x:expr, $y:expr, $z:expr, $resource:expr, $($component:expr),*) => {
