@@ -1,4 +1,3 @@
-#![warn(missing_docs)]
 //! `my_library` provides a suite of helpers to create games with Bevy.(1)
 //!
 //! ## What's Included?(2)
