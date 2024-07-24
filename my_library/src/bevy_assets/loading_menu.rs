@@ -17,6 +17,9 @@ pub(crate) fn run<T>(
     mut state: ResMut<NextState<T>>,
     mut egui_context: EguiContexts,
     menu_info: Res<MenuResource<T>>,
+    mut store: ResMut<AssetStore>,
+    loaded_assets: Res<crate::LoadedAssets>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) where
     T: States,
 {
@@ -30,6 +33,7 @@ pub(crate) fn run<T>(
     });
     if to_load.0.is_empty() {
         //(8)
+        load_atlases(&mut store, &loaded_assets, &mut texture_atlases);
         state.set(menu_info.menu_state.clone());
     }
     Window::new("Loading, Please Wait").show(
@@ -41,4 +45,26 @@ pub(crate) fn run<T>(
 
 pub(crate) fn exit(mut commands: Commands) {
     commands.remove_resource::<AssetsToLoad>();
+}
+
+fn load_atlases(
+    store: &mut AssetStore,
+    loaded_assets: &crate::LoadedAssets,
+    texture_atlases: &mut Assets<TextureAtlas>,
+) {
+    for new_atlas in store.atlases_to_build.iter() {
+        let texture_handle = store
+            .get_handle(&new_atlas.texture_tag, loaded_assets)
+            .unwrap();
+        let atlas = TextureAtlas::from_grid(
+            texture_handle,
+            new_atlas.tile_size,
+            new_atlas.sprites_x,
+            new_atlas.sprites_y,
+            None,
+            None,
+        );
+        let atlas_handle = texture_atlases.add(atlas);
+        store.atlases.insert(new_atlas.tag.clone(), atlas_handle);
+    }
 }

@@ -1,4 +1,6 @@
+mod bevy_animation;
 use bevy::prelude::*;
+pub use bevy_animation::*;
 mod game_menus;
 
 pub struct GameStatePlugin<T> {

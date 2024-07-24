@@ -7,9 +7,19 @@ use bevy::{
 pub type LoadedAssets = Assets<LoadedUntypedAsset>;
 pub type AssetResource<'w> = Res<'w, LoadedAssets>;
 
+pub(crate) struct FutureAtlas {
+    pub(crate) tag: String,
+    pub(crate) texture_tag: String,
+    pub(crate) tile_size: Vec2,
+    pub(crate) sprites_x: usize,
+    pub(crate) sprites_y: usize,
+}
+
 #[derive(Resource)]
 pub struct AssetStore {
     pub(crate) asset_index: HashMap<String, Handle<LoadedUntypedAsset>>,
+    pub(crate) atlases_to_build: Vec<FutureAtlas>,
+    pub(crate) atlases: HashMap<String, Handle<TextureAtlas>>,
 }
 
 impl AssetStore {
@@ -33,5 +43,12 @@ impl AssetStore {
             source: sound_handle,
             ..default()
         });
+    }
+
+    pub fn get_atlas_handle(&self, index: &str) -> Option<Handle<TextureAtlas>> {
+        if let Some(handle) = self.atlases.get(index) {
+            return Some(handle.clone());
+        }
+        None
     }
 }
