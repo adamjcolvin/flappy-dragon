@@ -26,7 +26,7 @@ fn main() -> anyhow::Result<()> {
 
     add_phase!(app, GamePhase, GamePhase::Flapping,
       start => [ setup ],
-      run => [ gravity, flap, clamp, move_walls, hit_wall, cycle_animations ],
+      run => [ gravity, flap, clamp, move_walls, hit_wall, cycle_animations, continual_parallax],
       exit => [ cleanup::<FlappyElement> ]
     );
 
@@ -51,7 +51,11 @@ fn main() -> anyhow::Result<()> {
             .add_image("wall", "wall.png")?
             .add_sound("flap", "dragonflap.ogg")?
             .add_sound("crash", "crash.ogg")?
-            .add_sprite_sheet("flappy", "flappy_sprite_sheet.png", 62.0, 65.0, 4, 1)?,
+            .add_sprite_sheet("flappy", "flappy_sprite_sheet.png", 62.0, 65.0, 4, 1)?
+            .add_image("bg_static", "rocky-far-mountains.png")?
+            .add_image("bg_far", "rocky-nowater-far.png")?
+            .add_image("bg_mid", "rocky-nowater-mid.png")?
+            .add_image("bg_close", "rocky-nowater-close.png")?,
     )
     .insert_resource(
         Animations::new()
@@ -100,6 +104,7 @@ fn setup(
     commands
         .spawn(Camera2dBundle::default())
         .insert(FlappyElement);
+    build_wall(&mut commands, &assets, &loaded_assets, rng.range(-5..5));
     spawn_animated_sprite!(
         assets,
         commands,
@@ -111,7 +116,82 @@ fn setup(
         Flappy { gravity: 0.0 },
         FlappyElement
     );
-    build_wall(&mut commands, &assets, &loaded_assets, rng.range(-5..5));
+    spawn_image!(
+        assets,
+        commands,
+        "bg_static",
+        0.0,
+        0.0,
+        1.0,
+        &loaded_assets,
+        FlappyElement
+    );
+    spawn_image!(
+        assets,
+        commands,
+        "bg_far",
+        0.0,
+        0.0,
+        2.0,
+        &loaded_assets,
+        FlappyElement,
+        ContinualParallax::new(1280.0, 66, Vec2::new(1.0, 0.0))
+    );
+    spawn_image!(
+        assets,
+        commands,
+        "bg_far",
+        1280.0,
+        0.0,
+        2.0,
+        &loaded_assets,
+        FlappyElement,
+        ContinualParallax::new(1280.0, 66, Vec2::new(1.0, 0.0))
+    );
+    spawn_image!(
+        assets,
+        commands,
+        "bg_mid",
+        0.0,
+        0.0,
+        3.0,
+        &loaded_assets,
+        FlappyElement,
+        ContinualParallax::new(1280.0, 33, Vec2::new(1.0, 0.0))
+    );
+    spawn_image!(
+        assets,
+        commands,
+        "bg_mid",
+        1280.0,
+        0.0,
+        3.0,
+        &loaded_assets,
+        FlappyElement,
+        ContinualParallax::new(1280.0, 33, Vec2::new(1.0, 0.0))
+    );
+    spawn_image!(
+        assets,
+        commands,
+        "bg_close",
+        0.0,
+        0.0,
+        4.0,
+        &loaded_assets,
+        FlappyElement,
+        ContinualParallax::new(1280.0, 16, Vec2::new(2.0, 0.0))
+    );
+    spawn_image!(
+        assets,
+        commands,
+        "bg_close",
+        1280.0,
+        0.0,
+        4.0,
+        &loaded_assets,
+        FlappyElement,
+        ContinualParallax::new(1280.0, 16, Vec2::new(2.0, 0.0))
+    );
 }
 
 fn build_wall(
@@ -128,7 +208,7 @@ fn build_wall(
                 "wall",
                 512.0,
                 y as f32 * 32.0,
-                1.0,
+                10.0,
                 &loaded_assets,
                 Obstacle,
                 FlappyElement
