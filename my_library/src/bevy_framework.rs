@@ -1,7 +1,9 @@
 mod bevy_animation;
 use bevy::prelude::*;
 pub use bevy_animation::*;
+mod bevy_physics;
 mod game_menus;
+pub use bevy_physics::*;
 
 pub struct GameStatePlugin<T> {
     menu_state: T,
@@ -28,6 +30,8 @@ where
     T: States + Copy,
 {
     fn build(&self, app: &mut App) {
+        app.add_event::<PhysicsTick>();
+        app.add_event::<Impulse>();
         app.add_state::<T>(); //(2)
         app.add_plugins(bevy_egui::EguiPlugin);
         let start = MenuResource {
