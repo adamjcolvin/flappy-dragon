@@ -24,7 +24,9 @@ fn main() -> anyhow::Result<()> {
 
     add_phase!(app, GamePhase, GamePhase::Flapping,
       start => [ setup ],
-      run => [ flap, clamp, move_walls, hit_wall, cycle_animations, continual_parallax, physics_clock, sum_impulses, apply_gravity, apply_velocity],
+      run => [ flap, clamp, move_walls, hit_wall, cycle_animations,
+        continual_parallax, physics_clock, sum_impulses, apply_gravity,
+        apply_velocity, check_collisions::<Flappy, Obstacle>, rotate],
       exit => [ cleanup::<FlappyElement> ]
     );
 
@@ -89,6 +91,7 @@ fn main() -> anyhow::Result<()> {
                 ]),
             ),
     )
+    .add_event::<OnCollision<Flappy, Obstacle>>()
     .run();
     Ok(())
 }
@@ -114,8 +117,11 @@ fn setup(
         Flappy {},
         FlappyElement,
         Velocity::default(),
-        ApplyGravity
+        ApplyGravity,
+        AxisAlignedBoundingBox::new(62.0, 65.0),
+        PhysicsPosition::new(Vec2::new(-490.0, 0.0))
     );
+    commands.insert_resource(StaticQuadTree::new(Vec2::new(1024.0, 768.0), 4));
     spawn_image!(
         assets,
         commands,
@@ -212,7 +218,9 @@ fn build_wall(
                 &loaded_assets,
                 Obstacle,
                 FlappyElement,
-                Velocity::new(-4.0, 0.0, 0.0)
+                Velocity::new(-4.0, 0.0, 0.0),
+                AxisAlignedBoundingBox::new(32.0, 32.0),
+                PhysicsPosition::new(Vec2::new(512.0, y as f32 * 32.0))
             );
         }
     }
@@ -269,20 +277,25 @@ fn move_walls(
 }
 
 fn hit_wall(
-    player: Query<&Transform, With<Flappy>>,
-    walls: Query<&Transform, With<Obstacle>>,
+    mut collisions: EventReader<OnCollision<Flappy, Obstacle>>,
     mut state: ResMut<NextState<GamePhase>>,
     assets: Res<AssetStore>,
     loaded_assets: Res<LoadedAssets>,
     mut commands: Commands,
 ) {
-    if let Ok(player) = player.get_single() {
-        for wall in walls.iter() {
-            let distance = player.translation.distance(wall.translation);
-            if distance < 32.0 {
-                assets.play("crash", &mut commands, &loaded_assets);
-                state.set(GamePhase::GameOver);
-            }
-        }
+    for _collision in collisions.read() {
+        assets.play("crash", &mut commands, &loaded_assets);
+        let _ = state.set(GamePhase::GameOver);
     }
+}
+
+fn rotate(mut physics_position: Query<(&PhysicsPosition, &mut Transform), With<Flappy>>) {
+    physics_position.for_each_mut(|(position, mut transform)| {
+        if position.start_frame != position.end_frame {
+            let start = position.start_frame;
+            let end = position.end_frame;
+            let angle = end.angle_between(start) * 10.0;
+            transform.rotation = Quat::from_rotation_z(angle);
+        }
+    });
 }

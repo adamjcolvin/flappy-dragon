@@ -13,12 +13,26 @@ pub fn physics_clock(
     mut clock: Local<PhysicsTimer>,
     time: Res<Time>,
     mut on_tick: EventWriter<PhysicsTick>,
+    mut physics_position: Query<(&mut PhysicsPosition, &mut Transform)>,
 ) {
     let ms_since_last_call = time.delta().as_millis();
     clock.0 += ms_since_last_call;
     if clock.0 > PHYSICS_TICK_TIME {
         clock.0 = 0;
+        physics_position.for_each_mut(|(mut pos, mut transform)| {
+            transform.translation.x = pos.end_frame.x;
+            transform.translation.y = pos.end_frame.y;
+            pos.start_frame = pos.end_frame
+        });
         on_tick.send(PhysicsTick);
+    } else {
+        let frame_progress = clock.0 as f32 / PHYSICS_TICK_TIME as f32;
+        physics_position.for_each_mut(|(pos, mut transform)| {
+            transform.translation.x =
+                pos.start_frame.x + (pos.end_frame.x - pos.start_frame.x) * frame_progress;
+            transform.translation.y =
+                pos.start_frame.y + (pos.end_frame.y - pos.start_frame.y) * frame_progress;
+        })
     }
 }
 
@@ -59,11 +73,11 @@ pub fn sum_impulses(mut impulses: EventReader<Impulse>, mut velocities: Query<&m
 
 pub fn apply_velocity(
     mut tick: EventReader<PhysicsTick>,
-    mut movement: Query<(&Velocity, &mut Transform)>,
+    mut movement: Query<(&Velocity, &mut PhysicsPosition)>,
 ) {
     for _tick in tick.read() {
-        movement.for_each_mut(|(velocity, mut transform)| {
-            transform.translation += velocity.0;
+        movement.for_each_mut(|(velocity, mut position)| {
+            position.end_frame += velocity.0.truncate();
         });
     }
 }
@@ -79,5 +93,20 @@ pub fn apply_gravity(
         gravity.for_each_mut(|mut velocity| {
             velocity.0.y -= 0.75;
         })
+    }
+}
+
+#[derive(Component)]
+pub struct PhysicsPosition {
+    pub start_frame: Vec2,
+    pub end_frame: Vec2,
+}
+
+impl PhysicsPosition {
+    pub fn new(start: Vec2) -> Self {
+        Self {
+            start_frame: start,
+            end_frame: start,
+        }
     }
 }
