@@ -218,7 +218,7 @@ fn build_wall(
                 &loaded_assets,
                 Obstacle,
                 FlappyElement,
-                Velocity::new(-4.0, 0.0, 0.0),
+                Velocity::new(-10.0, 0.0, 0.0),
                 AxisAlignedBoundingBox::new(32.0, 32.0),
                 PhysicsPosition::new(Vec2::new(512.0, y as f32 * 32.0))
             );
